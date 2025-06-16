@@ -23,10 +23,10 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	_, ok := models["audit.Log"]
+	_, ok := models["nichandle.Nichandle"]
 	if !ok {
 		fmt.Println("model not found")
 	} else {
-		fmt.Println(generator.GenerateTypeScriptRecursive2(models, "audit.Log"))
+		fmt.Println(generator.GenerateTypeScriptRecursive2(models, "nichandle.Nichandle"))
 	}
 }

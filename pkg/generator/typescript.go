@@ -73,12 +73,13 @@ func generateEnum(models map[string]types.Model, modelName string) {
 	if !exists {
 		return
 	}
-	processedTypes[modelName] = modelName
+	processedTypes[modelName] = model.Id
+	output.WriteString("/* " + modelName + " */\n")
 	output.WriteString("export enum " + model.Id + " {\n")
 	for _, value := range model.Enum {
 		output.WriteString("  " + value.(string) + ",\n")
 	}
-	output.WriteString("};\n")
+	output.WriteString("};\n\n")
 }
 
 func generateType(models map[string]types.Model, modelName string) {
@@ -103,12 +104,13 @@ func generateType(models map[string]types.Model, modelName string) {
 	}
 
 	processedTypes[modelName] = model.Id
+	output.WriteString("/* " + modelName + " */\n")
 	output.WriteString("export type " + model.Id + " = {\n")
 
 	for key, value := range model.Properties {
 		output.WriteString("  " + key + ": " + toTSType(&value) + ";\n")
 	}
-	output.WriteString("};\n")
+	output.WriteString("};\n\n")
 }
 
 func GenerateTypescript(model *types.Model) string {
