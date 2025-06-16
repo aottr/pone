@@ -1,0 +1,123 @@
+package generator
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/aottr/pone/internal/types"
+)
+
+var generatedTypes = map[string]string{}
+var processedTypes = make(map[string]string)
+var output strings.Builder
+
+func toTSBaseType(p *types.Property) string {
+	switch p.Type {
+	case "string", "uuid", "ip", "ipBlock":
+		return "string"
+	case "integer":
+		return "number"
+	case "boolean":
+		return "boolean"
+	case "array":
+		return "Array<any>"
+	case "object":
+		return "{ [key: string]: any }"
+	case "date", "datetime":
+		return "Date"
+	default:
+		if typeName, ok := processedTypes[p.Type]; ok {
+			return typeName
+		}
+		return "any"
+	}
+}
+
+func toTSType(p *types.Property) string {
+	// Check if type ends with [] for array notation
+	if strings.HasSuffix(p.Type, "[]") {
+		baseType := strings.TrimSuffix(p.Type, "[]")
+		return "Array<" + baseType + ">"
+	}
+	return toTSBaseType(p)
+}
+
+func GenerateTypeScriptRecursive(models map[string]types.Model, model types.Model) string {
+	var typeString = ""
+	// check for dependencies
+	for _, property := range model.Properties {
+		dep, ok := models[property.Type]
+		if !ok {
+			continue
+		}
+		typeString += GenerateTypescript(&dep) + "\n"
+		generatedTypes[property.Type] = dep.Id
+	}
+
+	typeString += GenerateTypescript(&model)
+
+	return typeString
+}
+
+func GenerateTypeScriptRecursive2(models map[string]types.Model, modelName string) string {
+	output.Reset()
+	generateType(models, modelName)
+	return output.String()
+}
+
+func generateEnum(models map[string]types.Model, modelName string) {
+	if processedTypes[modelName] != "" {
+		return
+	}
+	model, exists := models[modelName]
+	if !exists {
+		return
+	}
+	processedTypes[modelName] = modelName
+	output.WriteString("export enum " + model.Id + " {\n")
+	for _, value := range model.Enum {
+		output.WriteString("  " + value.(string) + ",\n")
+	}
+	output.WriteString("};\n")
+}
+
+func generateType(models map[string]types.Model, modelName string) {
+
+	fmt.Println(modelName)
+	if processedTypes[modelName] != "" {
+		return
+	}
+	model, exists := models[modelName]
+	if !exists {
+		return
+	}
+
+	if model.Properties == nil {
+		generateEnum(models, modelName)
+		return
+	}
+	for _, property := range model.Properties {
+		if _, isCustomType := models[property.Type]; isCustomType {
+			generateType(models, property.Type)
+		}
+	}
+
+	processedTypes[modelName] = model.Id
+	output.WriteString("export type " + model.Id + " = {\n")
+
+	for key, value := range model.Properties {
+		output.WriteString("  " + key + ": " + toTSType(&value) + ";\n")
+	}
+	output.WriteString("};\n")
+}
+
+func GenerateTypescript(model *types.Model) string {
+
+	var typeString = "export type " + model.Id + " = {\n"
+
+	for key, value := range model.Properties {
+		typeString += "  " + key + ": " + toTSType(&value) + ";\n"
+	}
+	typeString += "};\n"
+	return typeString
+}

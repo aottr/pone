@@ -8,30 +8,27 @@ import (
 	"github.com/aottr/pone/internal/types"
 )
 
-func FetchEndpointModels(ApiEndpoint string) error {
+func FetchEndpointModels(ApiEndpoint string) (map[string]types.Model, error) {
 
 	fmt.Println(ApiEndpoint)
 
 	resp, err := http.Get(ApiEndpoint)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	var data struct {
 		Models map[string]types.Model `json:"models"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return err
+		return nil, err
 	}
 
-	for _, model := range data.Models {
-		fmt.Println(model.Description)
-	}
-	return nil
+	return data.Models, nil
 }
