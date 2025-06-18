@@ -1,13 +1,11 @@
 package generator
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/aottr/pone/internal/types"
 )
 
-var generatedTypes = map[string]string{}
 var processedTypes = make(map[string]string)
 var output strings.Builder
 
@@ -42,24 +40,7 @@ func toTSType(p *types.Property) string {
 	return toTSBaseType(p)
 }
 
-func GenerateTypeScriptRecursive(models map[string]types.Model, model types.Model) string {
-	var typeString = ""
-	// check for dependencies
-	for _, property := range model.Properties {
-		dep, ok := models[property.Type]
-		if !ok {
-			continue
-		}
-		typeString += GenerateTypescript(&dep) + "\n"
-		generatedTypes[property.Type] = dep.Id
-	}
-
-	typeString += GenerateTypescript(&model)
-
-	return typeString
-}
-
-func GenerateTypeScriptRecursive2(models map[string]types.Model, modelName string) string {
+func GenerateTypeScript(models map[string]types.Model, modelName string) string {
 	output.Reset()
 	generateType(models, modelName)
 	return output.String()
@@ -84,7 +65,6 @@ func generateEnum(models map[string]types.Model, modelName string) {
 
 func generateType(models map[string]types.Model, modelName string) {
 
-	fmt.Println(modelName)
 	if processedTypes[modelName] != "" {
 		return
 	}
@@ -111,15 +91,4 @@ func generateType(models map[string]types.Model, modelName string) {
 		output.WriteString("  " + key + ": " + toTSType(&value) + ";\n")
 	}
 	output.WriteString("};\n\n")
-}
-
-func GenerateTypescript(model *types.Model) string {
-
-	var typeString = "export type " + model.Id + " = {\n"
-
-	for key, value := range model.Properties {
-		typeString += "  " + key + ": " + toTSType(&value) + ";\n"
-	}
-	typeString += "};\n"
-	return typeString
 }

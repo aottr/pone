@@ -10,8 +10,6 @@ import (
 
 func FetchEndpointModels(ApiEndpoint string) (map[string]types.Model, error) {
 
-	fmt.Println(ApiEndpoint)
-
 	resp, err := http.Get(ApiEndpoint)
 
 	if err != nil {
